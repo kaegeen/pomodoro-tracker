@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pomodoro Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+  <div class="max-w-5xl mx-auto bg-white rounded shadow p-6">
+    <h1 class="text-2xl font-bold text-center mb-6">Pomodoro Tracker</h1>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- Timer + Tasks -->
+      <div>
+        <div class="text-center mb-4">
+          <div id="timer" class="text-4xl font-mono mb-2">25:00</div>
+          <button onclick="startTimer()" class="border px-4 py-2 w-full">Start Pomodoro</button>
+        </div>
+
+        <div>
+          <h2 class="text-xl font-semibold mb-2">Tasks</h2>
+          <form onsubmit="addTask(event)" class="flex gap-2 mb-4">
+            <input id="taskInput" type="text" class="border px-2 py-1 flex-1" placeholder="New task" required />
+            <button class="border px-4">Add</button>
+          </form>
+          <ul id="taskList" class="space-y-2 max-h-40 overflow-y-auto"></ul>
+        </div>
+      </div>
+
+      <!-- Progress Chart -->
+      <div>
+        <h2 class="text-xl font-semibold mb-4">Weekly Pomodoro Progress</h2>
+        <canvas id="pomodoroChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let duration = 25 * 60
+    let timerId
+    const timerDisplay = document.getElementById('timer')
+
+    const weeklyData = {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: [{
+        label: 'Sessions',
+        data: [0, 0, 0, 0, 0, 0, 0],
+        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 1
+      }]
+    }
+
+    const chart = new Chart(document.getElementById('pomodoroChart'), {
+      type: 'bar',
+      data: weeklyData,
+      options: {
+        scales: {
+          y: { beginAtZero: true, stepSize: 1 }
+        }
+      }
+    })
+
+    function updateTimerDisplay(seconds) {
+      const min = Math.floor(seconds / 60)
+      const sec = seconds % 60
+      timerDisplay.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+    }
+
+    function getTodayIndex() {
+      const day = new Date().getDay()
+      return (day === 0) ? 6 : day - 1
+    }
+
+    function startTimer() {
+      clearInterval(timerId)
+      let remaining = duration
+      updateTimerDisplay(remaining)
+
+      timerId = setInterval(() => {
+        remaining--
+        updateTimerDisplay(remaining)
+
+        if (remaining <= 0) {
+          clearInterval(timerId)
+          alert("Pomodoro complete!")
+          const index = getTodayIndex()
+          weeklyData.datasets[0].data[index] += 1
+          chart.update()
+        }
+      }, 1000)
+    }
+
+    function addTask(e) {
+      e.preventDefault()
+      const input = document.getElementById('taskInput')
+      const text = input.value.trim()
+      if (!text) return
+
+      const li = document.createElement('li')
+      li.className = "flex justify-between items-center border p-2 rounded bg-gray-50"
+      li.innerHTML = `<span>${text}</span><button onclick="this.parentElement.remove()" class="px-2">✕</button>`
+      document.getElementById('taskList').appendChild(li)
+      input.value = ''
+    }
+  </script>
+</body>
+</html>
